@@ -2,10 +2,12 @@ package com.vanilla2hub;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
 @EnableJpaAuditing
+@ConfigurationPropertiesScan
 public class Vanilla2HubApplication {
 
     public static void main(String[] args) {

@@ -9,7 +9,11 @@ cors:
   allowed-origins:
     - https://app.hjeon.i234.me
 
+app:
+  cookie:
+    secure: true
+
 logging:
   level:
     root: WARN
-    me.hjeon.vanilla2hub: INFO
+    com.vanilla2hub: INFO
