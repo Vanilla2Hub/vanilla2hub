@@ -1,4 +1,4 @@
-package me.hjeon.vanilla2hub;
+package com.vanilla2hub;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

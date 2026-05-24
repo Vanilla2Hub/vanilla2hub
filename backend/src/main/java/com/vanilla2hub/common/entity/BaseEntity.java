@@ -1,4 +1,4 @@
-package me.hjeon.vanilla2hub.common.entity;
+package com.vanilla2hub.common.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
