@@ -17,6 +17,6 @@ cors:
 
 logging:
   level:
-    me.hjeon.vanilla2hub: DEBUG
+    com.vanilla2hub: DEBUG
     org.springframework.security: DEBUG
     org.springframework.web: DEBUG

@@ -85,17 +85,10 @@
   - 백엔드는 두 방식을 모두 수용, 클라이언트 전환 시 백엔드 무변경
   - CORS allowed-origins는 설정 파일로 외부화. 도메인 추가 시 코드 변경 없음
 
-## D-013: 다중 JWT 발급자(Multi-issuer) 인증 전략
+## D-013: ~~다중 JWT 발급자(Multi-issuer) 인증 전략~~ → Superseded by D-026
 
-- Status: Accepted
-- Decision: JWT `iss`(issuer) 클레임 기준으로 인증 검증기를 분기한다. Keycloak 발급 토큰은 Keycloak JWKS로 검증, Service B 발급 토큰은 Vault에 저장된 공유 서명키로 검증한다.
-- Reason: 두 클라이언트의 인증 체계가 다르지만 백엔드 코드를 분기 없이 단일 Security 필터 체인으로 처리하기 위함
-- Detail:
-  - `JwtIssuerAuthenticationManagerResolver`로 `iss` 클레임 기준 라우팅
-  - Keycloak issuer → Spring OAuth2 Resource Server (JWKS URI)
-  - Service B issuer → Vault 공유 서명키(HMAC or RSA)로 검증
-  - 공유 서명키는 Vault KV에서 런타임 주입, 키 교체 시 코드 변경 없음
-  - 두 토큰 모두 최종적으로 `user` / `admin` 역할로 매핑
+- Status: Superseded
+- Superseded by: D-026
 
 ## D-014: Kubernetes Pod 분리 전략
 
@@ -231,3 +224,16 @@
   - `backend/build.gradle.kts`: Spring Boot 플러그인 + 의존성 정의
   - Gradle Wrapper 사용 (`./gradlew`) — 팀원 로컬에 Gradle 설치 불필요
   - 주요 명령: `./gradlew :backend:bootRun`, `./gradlew :backend:test`, `./gradlew :backend:build`
+
+## D-026: 단일 JWT 발급자(Keycloak) + Postman 지원 인증 전략
+
+- Status: Accepted
+- Supersedes: D-013
+- Decision: JWT 검증은 Keycloak 단일 issuer로 단순화한다. 브라우저는 httpOnly Cookie, Postman 등 API 클라이언트는 `Authorization: Bearer` 헤더로 직접 호출한다.
+- Reason: Service B 연동 계획 제거 및 Vault 서명키 검증 복잡도 불필요. Postman 개발 편의성 확보가 더 중요.
+- Detail:
+  - `JwtCookieFilter`: `Authorization` 헤더가 이미 있으면 통과(Postman). 없으면 `access_token` 쿠키 → `Bearer` 헤더 변환(브라우저)
+  - Spring OAuth2 Resource Server: `spring.security.oauth2.resourceserver.jwt.issuer-uri` 단일 설정으로 Keycloak JWKS 검증
+  - `POST /api/auth/session`: 클라이언트가 `Authorization: Bearer <keycloak_token>`으로 호출 → Spring이 JWT 검증 후 httpOnly Cookie 발급
+  - `DELETE /api/auth/session`: Cookie 즉시 만료
+  - `app.cookie.secure`: dev=false, prod=true (yml 외부화)
