@@ -1,0 +1,15 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+
+cors:
+  allowed-origins:
+    - https://app.hjeon.i234.me
+
+logging:
+  level:
+    root: WARN
+    me.hjeon.vanilla2hub: INFO

@@ -1,0 +1,22 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/vanilla2hub}
+
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+cors:
+  allowed-origins:
+    - http://localhost:3000
+
+logging:
+  level:
+    me.hjeon.vanilla2hub: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
