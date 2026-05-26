@@ -32,6 +32,7 @@ frontend/.vite/
 .env.*
 !.env.example
 application-local.yml
+local.properties
 
 # OS
 .DS_Store
