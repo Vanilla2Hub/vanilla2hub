@@ -21,10 +21,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (initStarted) return
     initStarted = true
 
-    keycloak.init({ checkLoginIframe: false, pkceMethod: 'S256' })
+    keycloak.init({ checkLoginIframe: false })
       .then(async (authenticated) => {
         if (!authenticated) {
-          keycloak.login()
+          keycloak.login({ redirectUri: window.location.origin + '/' })
           return
         }
         await http.post('/auth/session', null, {
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch((err) => {
         console.error('[Keycloak] init failed:', err)
-        keycloak.login()
+        keycloak.login({ redirectUri: window.location.origin + '/' })
       })
 
     timerRef.current = setInterval(() => {
@@ -47,9 +47,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = () => {
-    http.delete('/auth/session').finally(() =>
-      keycloak.logout({ redirectUri: window.location.origin })
-    )
+    http.delete('/auth/session').finally(() => {
+      // post_logout_redirect_uri 없이 호출 — Keycloak이 Okta에 앱 URL을 전달하지 않음
+      const url = new URL(
+        `${keycloak.authServerUrl}realms/${keycloak.realm}/protocol/openid-connect/logout`
+      )
+      url.searchParams.set('client_id', keycloak.clientId!)
+      if (keycloak.idToken) url.searchParams.set('id_token_hint', keycloak.idToken)
+      window.location.href = url.toString()
+    })
   }
 
   if (!ready) {
