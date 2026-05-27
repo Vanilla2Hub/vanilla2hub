@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Form, Input, InputNumber, Modal } from 'antd'
+import { useTranslation } from 'react-i18next'
 import type { CodeType, CodeTypeRequest } from '../../api/codeApi'
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 
 export default function CodeTypeFormModal({ open, editing, onOk, onCancel, loading }: Props) {
   const [form] = Form.useForm<CodeTypeRequest>()
+  const { t } = useTranslation()
 
   useEffect(() => {
     if (open) {
@@ -24,7 +26,7 @@ export default function CodeTypeFormModal({ open, editing, onOk, onCancel, loadi
 
   return (
     <Modal
-      title={editing ? '코드타입 수정' : '코드타입 등록'}
+      title={editing ? t('codeType.editTitle') : t('codeType.registerTitle')}
       open={open}
       onOk={() => form.validateFields().then(onOk)}
       onCancel={onCancel}
@@ -33,16 +35,16 @@ export default function CodeTypeFormModal({ open, editing, onOk, onCancel, loadi
       destroyOnHidden
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-        <Form.Item name="code" label="코드" rules={[{ required: true, max: 50 }]}>
+        <Form.Item name="code" label={t('common.code')} rules={[{ required: true, max: 50 }]}>
           <Input placeholder="CONNECTOR_TYPE" disabled={!!editing} style={{ textTransform: 'uppercase' }} />
         </Form.Item>
-        <Form.Item name="name" label="이름" rules={[{ required: true, max: 100 }]}>
-          <Input placeholder="커넥터 유형" />
+        <Form.Item name="name" label={t('common.name')} rules={[{ required: true, max: 100 }]}>
+          <Input />
         </Form.Item>
-        <Form.Item name="description" label="설명">
+        <Form.Item name="description" label={t('common.description')}>
           <Input.TextArea rows={2} maxLength={500} showCount />
         </Form.Item>
-        <Form.Item name="sortOrder" label="정렬순서">
+        <Form.Item name="sortOrder" label={t('common.sortOrder')}>
           <InputNumber min={0} style={{ width: '100%' }} />
         </Form.Item>
       </Form>
