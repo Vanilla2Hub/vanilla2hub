@@ -81,8 +81,15 @@ JWT 수신
 
 ### 로그아웃
 
-1. Service A → Backend `DELETE /api/auth/session` 호출
-2. Backend → Cookie 즉시 만료 처리
+Keycloak-Okta 페더레이션 환경에서 두 시스템의 세션을 모두 종료한다.
+
+1. Service A → Backend `DELETE /api/auth/session` 호출 → Cookie 즉시 만료
+2. Service A → Keycloak `POST /realms/{realm}/protocol/openid-connect/logout` (백그라운드 fetch)
+   - 브라우저 리다이렉트 없이 Keycloak 세션만 종료
+   - 브라우저 리다이렉트 방식은 Keycloak이 `post_logout_redirect_uri`를 Okta로 전달하여 Okta가 거부하는 문제가 있어 POST 방식 사용
+3. Service A → `https://{okta-domain}/login/signout` 리다이렉트 → Okta 세션 종료
+
+헤더 표시 이름: Keycloak JWT의 `email` 클레임 사용 (페더레이션 첫 로그인 시 `preferred_username`이 Okta UUID로 설정될 수 있어 `email`로 대체)
 
 ### CORS 관리
 
