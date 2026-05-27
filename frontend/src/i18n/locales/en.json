@@ -1,0 +1,41 @@
+{
+  "common": {
+    "register": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "export": "Export",
+    "import": "Import",
+    "logout": "Logout",
+    "deleteConfirm": "Are you sure you want to delete?",
+    "sortOrder": "Sort Order",
+    "code": "Code",
+    "name": "Name",
+    "description": "Description"
+  },
+  "message": {
+    "registerSuccess": "Successfully added.",
+    "updateSuccess": "Successfully updated.",
+    "deleteSuccess": "Successfully deleted.",
+    "registerFail": "Failed to add.",
+    "updateFail": "Failed to update.",
+    "deleteFail": "Failed to delete.",
+    "importSuccess": "{{created}} created, {{skipped}} skipped",
+    "importFail": "Failed to import."
+  },
+  "codeType": {
+    "title": "Code Types",
+    "registerTitle": "Add Code Type",
+    "editTitle": "Edit Code Type",
+    "registerSuccess": "Code type added successfully."
+  },
+  "code": {
+    "title": "Codes",
+    "registerTitle": "Add Code",
+    "editTitle": "Edit Code",
+    "extra": "Extra (JSON)",
+    "empty": "No codes found.",
+    "selectType": "Select a code type on the left.",
+    "registerSuccess": "Code added successfully."
+  }
+}

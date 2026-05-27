@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { Avatar, Dropdown, Layout, Menu, Typography } from 'antd'
 import { AppstoreOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthProvider'
 
 const { Sider, Content, Header } = Layout
@@ -10,12 +11,19 @@ export default function MainLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
   const { username, logout } = useAuth()
+  const { t, i18n } = useTranslation()
+
+  const toggleLang = () => {
+    const next = i18n.language === 'ko' ? 'en' : 'ko'
+    i18n.changeLanguage(next)
+    localStorage.setItem('lang', next)
+  }
 
   const menuItems = [
     {
       key: '/codes',
       icon: <AppstoreOutlined />,
-      label: <Link to="/codes">공통코드</Link>,
+      label: <Link to="/codes">{t('codeType.title')}</Link>,
     },
   ]
 
@@ -28,9 +36,15 @@ export default function MainLayout() {
         <Menu theme="dark" mode="inline" selectedKeys={[location.pathname]} items={menuItems} />
       </Sider>
       <Layout>
-        <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+        <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 16 }}>
+          <Typography.Text
+            style={{ cursor: 'pointer', fontSize: 13, color: '#595959' }}
+            onClick={toggleLang}
+          >
+            {i18n.language === 'ko' ? 'EN' : '한국어'}
+          </Typography.Text>
           <Dropdown
-            menu={{ items: [{ key: 'logout', icon: <LogoutOutlined />, label: '로그아웃', onClick: logout }] }}
+            menu={{ items: [{ key: 'logout', icon: <LogoutOutlined />, label: t('common.logout'), onClick: logout }] }}
             placement="bottomRight"
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
