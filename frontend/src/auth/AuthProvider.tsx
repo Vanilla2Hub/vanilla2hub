@@ -47,14 +47,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = () => {
-    http.delete('/auth/session').finally(() => {
-      // post_logout_redirect_uri 없이 호출 — Keycloak이 Okta에 앱 URL을 전달하지 않음
-      const url = new URL(
-        `${keycloak.authServerUrl}realms/${keycloak.realm}/protocol/openid-connect/logout`
-      )
-      url.searchParams.set('client_id', keycloak.clientId!)
-      if (keycloak.idToken) url.searchParams.set('id_token_hint', keycloak.idToken)
-      window.location.href = url.toString()
+    http.delete('/auth/session').finally(async () => {
+      const base = keycloak.authServerUrl?.endsWith('/') ? keycloak.authServerUrl : `${keycloak.authServerUrl}/`
+
+      // Keycloak 세션을 POST로 직접 종료 (브라우저 리다이렉트 없음 → Okta 재전달 없음)
+      try {
+        const body = new URLSearchParams()
+        body.append('client_id', keycloak.clientId!)
+        if (keycloak.idToken) body.append('id_token_hint', keycloak.idToken)
+        await fetch(`${base}realms/${keycloak.realm}/protocol/openid-connect/logout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: body.toString(),
+        })
+      } catch {
+        // Keycloak 세션 종료 실패 시에도 Okta 로그아웃 진행
+      }
+
+      // Okta 세션 종료 — /login/signout은 id_token_hint 없이도 동작
+      window.location.href = 'https://integrator-2776408.okta.com/login/signout'
     })
   }
 
