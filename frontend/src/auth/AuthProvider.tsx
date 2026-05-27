@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )
   }
 
-  const username = (keycloak.tokenParsed?.preferred_username as string) ?? ''
+  const username = (keycloak.tokenParsed?.email as string) ?? ''
 
   return (
     <AuthContext.Provider value={{ username, logout }}>
