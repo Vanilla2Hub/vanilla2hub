@@ -26,7 +26,7 @@ export default function CodeFormModal({ open, editing, onOk, onCancel, loading }
     <Modal
       title={editing ? '코드 수정' : '코드 등록'}
       open={open}
-      onOk={() => form.validateFields().then(onOk)}
+      onOk={() => form.validateFields().then(values => onOk({ ...values, extra: values.extra || undefined }))}
       onCancel={onCancel}
       confirmLoading={loading}
       afterClose={() => form.resetFields()}

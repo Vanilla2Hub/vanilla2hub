@@ -44,6 +44,9 @@ dependencies {
     // API Docs
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8'
 
+    // CSV
+    implementation 'org.apache.commons:commons-csv:1.10.0'
+
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

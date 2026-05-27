@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Col, Popconfirm, Row, Space, Table, Tag, Typography, message } from 'antd'
-import { DeleteOutlined, EditOutlined, PlusOutlined, UnorderedListOutlined } from '@ant-design/icons'
+import { DeleteOutlined, DownloadOutlined, EditOutlined, PlusOutlined, UnorderedListOutlined, UploadOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { codeApi, codeTypeApi } from '../../api/codeApi'
-import type { Code, CodeRequest, CodeType, CodeTypeRequest } from '../../api/codeApi'
+import type { Code, CodeRequest, CodeType, CodeTypeRequest, ImportResult } from '../../api/codeApi'
 import CodeTypeFormModal from './CodeTypeFormModal'
 import CodeFormModal from './CodeFormModal'
 
@@ -17,6 +17,8 @@ export default function CodeManagementPage() {
   const [codeTypeModal, setCodeTypeModal] = useState<{ open: boolean; editing: CodeType | null }>({ open: false, editing: null })
   const [codeModal, setCodeModal] = useState<{ open: boolean; editing: Code | null }>({ open: false, editing: null })
   const [selectedCodeType, setSelectedCodeType] = useState<CodeType | null>(null)
+  const codeTypeImportRef = useRef<HTMLInputElement>(null)
+  const codeImportRef = useRef<HTMLInputElement>(null)
 
   // 코드타입 조회
   const { data: codeTypes = [], isLoading: loadingTypes } = useQuery({
@@ -128,16 +130,48 @@ export default function CodeManagementPage() {
     }
   }
 
+  const importCodeTypeMutation = useMutation({
+    mutationFn: (file: File) => codeTypeApi.importCsv(file),
+    onSuccess: (result: ImportResult) => {
+      queryClient.invalidateQueries({ queryKey: ['codeTypes'] })
+      messageApi.success(`${result.created}개 생성, ${result.skipped}개 건너뜀`)
+    },
+    onError: () => messageApi.error('가져오기에 실패했습니다.'),
+  })
+
+  const importCodeMutation = useMutation({
+    mutationFn: (file: File) => codeApi.importCsv(selectedCodeType!.id, file),
+    onSuccess: (result: ImportResult) => {
+      queryClient.invalidateQueries({ queryKey: ['codes', selectedCodeType?.id] })
+      messageApi.success(`${result.created}개 생성, ${result.skipped}개 건너뜀`)
+    },
+    onError: () => messageApi.error('가져오기에 실패했습니다.'),
+  })
+
+  const handleCodeTypeImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = ''
+    if (file) importCodeTypeMutation.mutate(file)
+  }
+
+  const handleCodeImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = ''
+    if (file) importCodeMutation.mutate(file)
+  }
+
   return (
     <>
       {contextHolder}
+      <input type="file" accept=".csv" ref={codeTypeImportRef} style={{ display: 'none' }} onChange={handleCodeTypeImport} />
+      <input type="file" accept=".csv" ref={codeImportRef} style={{ display: 'none' }} onChange={handleCodeImport} />
       <Row gutter={16}>
         <Col span={10}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Title level={5} style={{ margin: 0 }}>코드타입</Title>
-            <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => setCodeTypeModal({ open: true, editing: null })}>
-              등록
-            </Button>
+            <Space>
+              <Button size="small" icon={<DownloadOutlined />} onClick={() => codeTypeApi.exportCsv()}>내보내기</Button>
+              <Button size="small" icon={<UploadOutlined />} loading={importCodeTypeMutation.isPending} onClick={() => codeTypeImportRef.current?.click()}>가져오기</Button>
+              <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => setCodeTypeModal({ open: true, editing: null })}>등록</Button>
+            </Space>
           </div>
           <Table
             rowKey="id"
@@ -157,15 +191,14 @@ export default function CodeManagementPage() {
               코드 목록
               {selectedCodeType && <Tag color="blue" style={{ marginLeft: 8 }}>{selectedCodeType.name}</Tag>}
             </Title>
-            <Button
-              type="primary"
-              size="small"
-              icon={<PlusOutlined />}
-              disabled={!selectedCodeType}
-              onClick={() => setCodeModal({ open: true, editing: null })}
-            >
-              등록
-            </Button>
+            <Space>
+              <Button size="small" icon={<DownloadOutlined />} disabled={!selectedCodeType}
+                onClick={() => codeApi.exportCsv(selectedCodeType!.id, `${selectedCodeType!.code}-codes.csv`)}>내보내기</Button>
+              <Button size="small" icon={<UploadOutlined />} disabled={!selectedCodeType} loading={importCodeMutation.isPending}
+                onClick={() => codeImportRef.current?.click()}>가져오기</Button>
+              <Button type="primary" size="small" icon={<PlusOutlined />} disabled={!selectedCodeType}
+                onClick={() => setCodeModal({ open: true, editing: null })}>등록</Button>
+            </Space>
           </div>
           <Table
             rowKey="id"

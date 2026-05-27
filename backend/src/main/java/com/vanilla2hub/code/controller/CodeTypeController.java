@@ -9,9 +9,14 @@ import com.vanilla2hub.code.service.CodeTypeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/code-types")
@@ -24,6 +29,18 @@ public class CodeTypeController {
     @GetMapping
     public List<CodeTypeResponse> getAll() {
         return codeTypeService.getAll();
+    }
+
+    @GetMapping(value = "/export", produces = "text/csv;charset=UTF-8")
+    public ResponseEntity<byte[]> exportCodeTypes() throws IOException {
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"code-types.csv\"")
+                .body(codeTypeService.exportCsv());
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Map<String, Integer> importCodeTypes(@RequestParam("file") MultipartFile file) throws IOException {
+        return codeTypeService.importCsv(file);
     }
 
     @GetMapping("/{id}")
@@ -51,6 +68,19 @@ public class CodeTypeController {
     @GetMapping("/{codeTypeId}/codes")
     public List<CodeResponse> getCodes(@PathVariable Long codeTypeId) {
         return codeService.getAllByCodeTypeId(codeTypeId);
+    }
+
+    @GetMapping(value = "/{codeTypeId}/codes/export", produces = "text/csv;charset=UTF-8")
+    public ResponseEntity<byte[]> exportCodes(@PathVariable Long codeTypeId) throws IOException {
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"codes.csv\"")
+                .body(codeService.exportCsv(codeTypeId));
+    }
+
+    @PostMapping(value = "/{codeTypeId}/codes/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Map<String, Integer> importCodes(@PathVariable Long codeTypeId,
+                                             @RequestParam("file") MultipartFile file) throws IOException {
+        return codeService.importCsv(codeTypeId, file);
     }
 
     @PostMapping("/{codeTypeId}/codes")
