@@ -27,8 +27,10 @@ public class AuthController {
     @PostMapping("/session")
     public ResponseEntity<Void> createSession(@AuthenticationPrincipal Jwt jwt,
                                               HttpServletResponse response) {
-        long maxAge = jwt.getExpiresAt() != null
-                ? jwt.getExpiresAt().getEpochSecond() - jwt.getIssuedAt().getEpochSecond()
+        var expiresAt = jwt.getExpiresAt();
+        var issuedAt = jwt.getIssuedAt();
+        long maxAge = expiresAt != null && issuedAt != null
+                ? expiresAt.getEpochSecond() - issuedAt.getEpochSecond()
                 : 3600L;
 
         ResponseCookie cookie = buildCookie(jwt.getTokenValue(), maxAge);

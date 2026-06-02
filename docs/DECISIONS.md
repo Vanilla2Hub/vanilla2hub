@@ -225,6 +225,28 @@
   - Gradle Wrapper 사용 (`./gradlew`) — 팀원 로컬에 Gradle 설치 불필요
   - 주요 명령: `./gradlew :backend:bootRun`, `./gradlew :backend:test`, `./gradlew :backend:build`
 
+## D-027: Code Type Attribute Schema 설계
+
+- Status: Accepted
+- Decision: Code Type에 `attribute_schema` JSON 컬럼을 두어 하위 Code의 부가 속성 필드를 동적으로 정의한다. Code의 속성 값은 기존 `extra` JSON 컬럼에 저장한다.
+- Reason: 코드 유형마다 필요한 부가 정보가 다르다. 별도 컬럼이나 별도 테이블 없이, 스키마 정의와 값 저장 모두 JSON 컬럼을 활용해 단순하게 확장 가능하게 구성한다.
+- Detail:
+  - `attribute_schema`: `AttributeField[]` JSON 배열 (key, label, type, required, editable, defaultValue, options, refCodeTypeCode)
+  - 지원 타입: `text`, `number`, `boolean`, `select`, `code_ref`
+  - `code_ref`: 다른 Code Type을 참조. 해당 Code Type 삭제 또는 참조 코드 삭제 시 참조 무결성 검사 후 409 반환
+  - key 삭제 시 모든 Code.extra에서 해당 key 일괄 제거 (`JSON_REMOVE` native query)
+  - `system_default = true`인 Code Type / Code는 API를 통한 수정/삭제 불가 (Flyway DML로만 관리)
+  - 서버 기동 시 Redis warm-up, CRUD 시 즉시 refresh (TTL=0, 명시적 무효화)
+
+## D-028: SonarQube 외부 인프라로 분리
+
+- Status: Accepted
+- Decision: SonarQube를 프로젝트 외부 인프라로 운영한다. `docker-compose.sonar.yml`을 레포에서 제거하고 `localhost:9000`의 외부 서비스에 연결한다.
+- Reason: SonarQube는 개발 시에만 사용하는 외부 품질 도구로, 프로젝트 배포 단위에 포함할 필요가 없다. 레포에 묶으면 다른 프로젝트에서 재사용이 어렵고 불필요한 의존성이 생긴다.
+- Detail:
+  - 분석 실행: `./gradlew sonar` (루트에서 실행, `build.gradle`의 `sonar` 블록 유지)
+  - SonarQube 프로젝트 키: `vanilla2hub`
+
 ## D-026: 단일 JWT 발급자(Keycloak) + Postman 지원 인증 전략
 
 - Status: Accepted

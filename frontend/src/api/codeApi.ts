@@ -2,11 +2,25 @@ import http from './http'
 
 const api = http
 
+export interface AttributeField {
+  key: string
+  label: string
+  type: 'text' | 'number' | 'boolean' | 'select' | 'code_ref'
+  required: boolean
+  defaultValue?: string
+  editable: boolean
+  options?: string[]
+  refCodeTypeCode?: string   // type=code_ref 일 때 참조할 CodeType code
+  _existing?: boolean        // UI only - 기존 필드 여부 (key 수정 잠금용)
+}
+
 export interface CodeType {
   id: number
   code: string
   name: string
   description: string | null
+  attributeSchema: AttributeField[]
+  systemDefault: boolean
   sortOrder: number
   createdBy: string
   updatedBy: string
@@ -21,6 +35,7 @@ export interface Code {
   name: string
   description: string | null
   extra: string | null
+  systemDefault: boolean
   sortOrder: number
   createdBy: string
   updatedBy: string
@@ -32,6 +47,7 @@ export interface CodeTypeRequest {
   code: string
   name: string
   description?: string
+  attributeSchema?: Omit<AttributeField, '_existing'>[]
   sortOrder: number
 }
 

@@ -11,6 +11,7 @@ public record CodeResponse(
         String name,
         String description,
         String extra,
+        boolean systemDefault,
         int sortOrder,
         String createdBy,
         String updatedBy,
@@ -20,11 +21,12 @@ public record CodeResponse(
     public static CodeResponse from(Code code) {
         return new CodeResponse(
                 code.getId(),
-                code.getCodeType().getId(),
+                code.getCodeTypeId(),
                 code.getCode(),
                 code.getName(),
                 code.getDescription(),
                 code.getExtra(),
+                code.isSystemDefault(),
                 code.getSortOrder(),
                 code.getCreatedBy(),
                 code.getUpdatedBy(),

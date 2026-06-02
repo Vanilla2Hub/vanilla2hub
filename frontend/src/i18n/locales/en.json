@@ -11,7 +11,8 @@
     "sortOrder": "Sort Order",
     "code": "Code",
     "name": "Name",
-    "description": "Description"
+    "description": "Description",
+    "system": "System"
   },
   "message": {
     "registerSuccess": "Successfully added.",
@@ -27,7 +28,24 @@
     "title": "Code Types",
     "registerTitle": "Add Code Type",
     "editTitle": "Edit Code Type",
-    "registerSuccess": "Code type added successfully."
+    "registerSuccess": "Code type added successfully.",
+    "attributeSchema": "Attribute Schema",
+    "addField": "Add Field",
+    "fieldKey": "Key",
+    "fieldLabel": "Label",
+    "fieldType": "Type",
+    "fieldRequired": "Required",
+    "fieldEditable": "Editable",
+    "fieldDefaultValue": "Default",
+    "fieldOptions": "Options (comma-separated)",
+    "fieldRefCodeType": "Ref Code Type"
+  },
+  "fieldType": {
+    "text": "Text",
+    "number": "Number",
+    "boolean": "Boolean",
+    "select": "Select",
+    "code_ref": "Code Ref"
   },
   "code": {
     "title": "Codes",
