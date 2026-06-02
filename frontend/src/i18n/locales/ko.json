@@ -11,7 +11,8 @@
     "sortOrder": "정렬순서",
     "code": "코드",
     "name": "이름",
-    "description": "설명"
+    "description": "설명",
+    "system": "시스템"
   },
   "message": {
     "registerSuccess": "등록됐습니다.",
@@ -27,7 +28,24 @@
     "title": "코드타입",
     "registerTitle": "코드타입 등록",
     "editTitle": "코드타입 수정",
-    "registerSuccess": "코드타입이 등록됐습니다."
+    "registerSuccess": "코드타입이 등록됐습니다.",
+    "attributeSchema": "속성 스키마",
+    "addField": "필드 추가",
+    "fieldKey": "키",
+    "fieldLabel": "레이블",
+    "fieldType": "타입",
+    "fieldRequired": "필수",
+    "fieldEditable": "수정가능",
+    "fieldDefaultValue": "기본값",
+    "fieldOptions": "선택값 (쉼표 구분)",
+    "fieldRefCodeType": "참조 코드타입"
+  },
+  "fieldType": {
+    "text": "텍스트",
+    "number": "숫자",
+    "boolean": "참/거짓",
+    "select": "선택",
+    "code_ref": "코드 참조"
   },
   "code": {
     "title": "코드 목록",

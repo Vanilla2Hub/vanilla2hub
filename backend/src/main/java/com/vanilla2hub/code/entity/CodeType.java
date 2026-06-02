@@ -22,6 +22,12 @@ public class CodeType extends BaseEntity {
     @Column(length = 500)
     private String description;
 
+    @Column(columnDefinition = "JSON")
+    private String attributeSchema;
+
+    @Column(nullable = false)
+    private boolean systemDefault;
+
     @Column(nullable = false)
     private int sortOrder;
 
@@ -29,17 +35,20 @@ public class CodeType extends BaseEntity {
     private boolean deleted;
 
     @Builder
-    public CodeType(String code, String name, String description, int sortOrder) {
+    public CodeType(String code, String name, String description, String attributeSchema, int sortOrder) {
         this.code = code;
         this.name = name;
         this.description = description;
+        this.attributeSchema = attributeSchema;
         this.sortOrder = sortOrder;
         this.deleted = false;
+        this.systemDefault = false;
     }
 
-    public void update(String name, String description, int sortOrder) {
+    public void update(String name, String description, String attributeSchema, int sortOrder) {
         this.name = name;
         this.description = description;
+        this.attributeSchema = attributeSchema;
         this.sortOrder = sortOrder;
     }
 

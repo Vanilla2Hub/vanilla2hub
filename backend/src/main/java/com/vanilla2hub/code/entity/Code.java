@@ -17,8 +17,14 @@ public class Code extends BaseEntity {
     @JoinColumn(name = "code_type_id", nullable = false)
     private CodeType codeType;
 
-    @Column(nullable = false, length = 50)
-    private String code;
+    @Column(name = "code_type_id", insertable = false, updatable = false)
+    private Long codeTypeId;
+
+    @Getter(AccessLevel.NONE)
+    @Column(name = "code", nullable = false, length = 50)
+    private String codeValue;
+
+    public String getCode() { return codeValue; }
 
     @Column(nullable = false, length = 100)
     private String name;
@@ -30,6 +36,9 @@ public class Code extends BaseEntity {
     private String extra;
 
     @Column(nullable = false)
+    private boolean systemDefault;
+
+    @Column(nullable = false)
     private int sortOrder;
 
     @Column(nullable = false)
@@ -38,12 +47,13 @@ public class Code extends BaseEntity {
     @Builder
     public Code(CodeType codeType, String code, String name, String description, String extra, int sortOrder) {
         this.codeType = codeType;
-        this.code = code;
+        this.codeValue = code;
         this.name = name;
         this.description = description;
         this.extra = extra;
         this.sortOrder = sortOrder;
         this.deleted = false;
+        this.systemDefault = false;
     }
 
     public void update(String name, String description, String extra, int sortOrder) {

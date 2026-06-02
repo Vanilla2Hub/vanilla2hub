@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Col, Popconfirm, Row, Space, Table, Tag, Typography, message } from 'antd'
-import { DeleteOutlined, DownloadOutlined, EditOutlined, PlusOutlined, UnorderedListOutlined, UploadOutlined } from '@ant-design/icons'
+import { Button, Col, Popconfirm, Row, Space, Table, Tag, Tooltip, Typography, message } from 'antd'
+import { DeleteOutlined, DownloadOutlined, EditOutlined, LockOutlined, PlusOutlined, UnorderedListOutlined, UploadOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import type { ColumnsType } from 'antd/es/table'
 import { codeApi, codeTypeApi } from '../../api/codeApi'
@@ -18,24 +18,24 @@ export default function CodeManagementPage() {
 
   const [codeTypeModal, setCodeTypeModal] = useState<{ open: boolean; editing: CodeType | null }>({ open: false, editing: null })
   const [codeModal, setCodeModal] = useState<{ open: boolean; editing: Code | null }>({ open: false, editing: null })
-  const [selectedCodeType, setSelectedCodeType] = useState<CodeType | null>(null)
+  const [selectedCodeTypeId, setSelectedCodeTypeId] = useState<number | null>(null)
   const codeTypeImportRef = useRef<HTMLInputElement>(null)
   const codeImportRef = useRef<HTMLInputElement>(null)
 
-  // 코드타입 조회
   const { data: codeTypes = [], isLoading: loadingTypes } = useQuery({
     queryKey: ['codeTypes'],
     queryFn: codeTypeApi.getAll,
   })
 
-  // 코드 조회
+  // codeTypes 쿼리에서 파생 — CodeType 수정 후 캐시 갱신 시 자동으로 최신값 반영
+  const selectedCodeType = codeTypes.find(ct => ct.id === selectedCodeTypeId) ?? null
+
   const { data: codes = [], isLoading: loadingCodes } = useQuery({
-    queryKey: ['codes', selectedCodeType?.id],
-    queryFn: () => codeApi.getAll(selectedCodeType!.id),
-    enabled: !!selectedCodeType,
+    queryKey: ['codes', selectedCodeTypeId],
+    queryFn: () => codeApi.getAll(selectedCodeTypeId!),
+    enabled: !!selectedCodeTypeId,
   })
 
-  // 코드타입 뮤테이션
   const createCodeType = useMutation({
     mutationFn: (data: CodeTypeRequest) => codeTypeApi.create(data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['codeTypes'] }); setCodeTypeModal({ open: false, editing: null }); messageApi.success(t('codeType.registerSuccess')) },
@@ -48,11 +48,10 @@ export default function CodeManagementPage() {
   })
   const deleteCodeType = useMutation({
     mutationFn: (id: number) => codeTypeApi.delete(id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['codeTypes'] }); if (selectedCodeType) setSelectedCodeType(null); messageApi.success(t('message.deleteSuccess')) },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['codeTypes'] }); setSelectedCodeTypeId(null); messageApi.success(t('message.deleteSuccess')) },
     onError: () => messageApi.error(t('message.deleteFail')),
   })
 
-  // 코드 뮤테이션
   const createCode = useMutation({
     mutationFn: (data: CodeRequest) => codeApi.create(selectedCodeType!.id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['codes', selectedCodeType?.id] }); setCodeModal({ open: false, editing: null }); messageApi.success(t('code.registerSuccess')) },
@@ -70,46 +69,72 @@ export default function CodeManagementPage() {
   })
 
   const codeTypeColumns: ColumnsType<CodeType> = [
-    { title: t('common.code'), dataIndex: 'code', key: 'code', render: v => <Tag>{v}</Tag> },
+    {
+      title: t('common.code'), dataIndex: 'code', key: 'code',
+      render: (v, r) => (
+        <Space size={4}>
+          {r.systemDefault && <Tooltip title={t('common.system')}><LockOutlined style={{ color: '#999', fontSize: 11 }} /></Tooltip>}
+          <Tag>{v}</Tag>
+        </Space>
+      ),
+    },
     { title: t('common.name'), dataIndex: 'name', key: 'name' },
     { title: t('common.sortOrder'), dataIndex: 'sortOrder', key: 'sortOrder', width: 70, align: 'center' },
     {
-      title: '',
-      key: 'actions',
-      width: 100,
-      align: 'center',
+      title: '', key: 'actions', width: 100, align: 'center',
       render: (_, record) => (
         <Space>
-          <Button size="small" icon={<UnorderedListOutlined />} onClick={() => setSelectedCodeType(record)} />
-          <Button size="small" icon={<EditOutlined />} onClick={() => setCodeTypeModal({ open: true, editing: record })} />
-          <Popconfirm title={t('common.deleteConfirm')} onConfirm={() => deleteCodeType.mutate(record.id)}>
-            <Button size="small" danger icon={<DeleteOutlined />} />
+          <Button size="small" icon={<UnorderedListOutlined />} onClick={() => setSelectedCodeTypeId(record.id)} />
+          <Button size="small" icon={<EditOutlined />} disabled={record.systemDefault} onClick={() => setCodeTypeModal({ open: true, editing: record })} />
+          <Popconfirm title={t('common.deleteConfirm')} onConfirm={() => deleteCodeType.mutate(record.id)} disabled={record.systemDefault}>
+            <Button size="small" danger icon={<DeleteOutlined />} disabled={record.systemDefault} />
           </Popconfirm>
         </Space>
       ),
     },
   ]
 
+  // 코드 목록에서 extra 값을 스키마 기반으로 표시
+  const renderExtra = (extra: string | null) => {
+    if (!extra) return '-'
+    try {
+      const obj = JSON.parse(extra)
+      const schema = selectedCodeType?.attributeSchema ?? []
+      if (schema.length === 0) return <Text code style={{ fontSize: 11 }}>{extra}</Text>
+      return (
+        <Space size={4} wrap>
+          {schema.map(f => {
+            const val = obj[f.key]
+            if (val === undefined || val === null || val === '') return null
+            return <Tag key={f.key} style={{ fontSize: 11 }}><Text type="secondary">{f.label}:</Text> {String(val)}</Tag>
+          })}
+        </Space>
+      )
+    } catch {
+      return <Text code style={{ fontSize: 11 }}>{extra}</Text>
+    }
+  }
+
   const codeColumns: ColumnsType<Code> = [
-    { title: t('common.code'), dataIndex: 'code', key: 'code', render: v => <Tag>{v}</Tag> },
+    {
+      title: t('common.code'), dataIndex: 'code', key: 'code',
+      render: (v, r) => (
+        <Space size={4}>
+          {r.systemDefault && <Tooltip title={t('common.system')}><LockOutlined style={{ color: '#999', fontSize: 11 }} /></Tooltip>}
+          <Tag>{v}</Tag>
+        </Space>
+      ),
+    },
     { title: t('common.name'), dataIndex: 'name', key: 'name' },
     { title: t('common.sortOrder'), dataIndex: 'sortOrder', key: 'sortOrder', width: 70, align: 'center' },
+    { title: t('code.extra'), key: 'extra', render: (_, r) => renderExtra(r.extra) },
     {
-      title: t('code.extra'),
-      dataIndex: 'extra',
-      key: 'extra',
-      render: v => v ? <Text code style={{ fontSize: 11 }}>{v}</Text> : '-',
-    },
-    {
-      title: '',
-      key: 'actions',
-      width: 100,
-      align: 'center',
+      title: '', key: 'actions', width: 80, align: 'center',
       render: (_, record) => (
         <Space>
-          <Button size="small" icon={<EditOutlined />} onClick={() => setCodeModal({ open: true, editing: record })} />
-          <Popconfirm title={t('common.deleteConfirm')} onConfirm={() => deleteCode.mutate(record.id)}>
-            <Button size="small" danger icon={<DeleteOutlined />} />
+          <Button size="small" icon={<EditOutlined />} disabled={record.systemDefault} onClick={() => setCodeModal({ open: true, editing: record })} />
+          <Popconfirm title={t('common.deleteConfirm')} onConfirm={() => deleteCode.mutate(record.id)} disabled={record.systemDefault}>
+            <Button size="small" danger icon={<DeleteOutlined />} disabled={record.systemDefault} />
           </Popconfirm>
         </Space>
       ),
@@ -134,19 +159,13 @@ export default function CodeManagementPage() {
 
   const importCodeTypeMutation = useMutation({
     mutationFn: (file: File) => codeTypeApi.importCsv(file),
-    onSuccess: (result: ImportResult) => {
-      queryClient.invalidateQueries({ queryKey: ['codeTypes'] })
-      messageApi.success(t('message.importSuccess', { created: result.created, skipped: result.skipped }))
-    },
+    onSuccess: (result: ImportResult) => { queryClient.invalidateQueries({ queryKey: ['codeTypes'] }); messageApi.success(t('message.importSuccess', { created: result.created, skipped: result.skipped })) },
     onError: () => messageApi.error(t('message.importFail')),
   })
 
   const importCodeMutation = useMutation({
     mutationFn: (file: File) => codeApi.importCsv(selectedCodeType!.id, file),
-    onSuccess: (result: ImportResult) => {
-      queryClient.invalidateQueries({ queryKey: ['codes', selectedCodeType?.id] })
-      messageApi.success(t('message.importSuccess', { created: result.created, skipped: result.skipped }))
-    },
+    onSuccess: (result: ImportResult) => { queryClient.invalidateQueries({ queryKey: ['codes', selectedCodeType?.id] }); messageApi.success(t('message.importSuccess', { created: result.created, skipped: result.skipped })) },
     onError: () => messageApi.error(t('message.importFail')),
   })
 
@@ -183,7 +202,7 @@ export default function CodeManagementPage() {
             size="small"
             pagination={false}
             rowClassName={r => r.id === selectedCodeType?.id ? 'ant-table-row-selected' : ''}
-            onRow={r => ({ onClick: () => setSelectedCodeType(r), style: { cursor: 'pointer' } })}
+            onRow={r => ({ onClick: () => setSelectedCodeTypeId(r.id), style: { cursor: 'pointer' } })}
           />
         </Col>
 
@@ -217,6 +236,7 @@ export default function CodeManagementPage() {
       <CodeTypeFormModal
         open={codeTypeModal.open}
         editing={codeTypeModal.editing}
+        codeTypes={codeTypes}
         onOk={handleCodeTypeOk}
         onCancel={() => setCodeTypeModal({ open: false, editing: null })}
         loading={createCodeType.isPending || updateCodeType.isPending}
@@ -224,6 +244,8 @@ export default function CodeManagementPage() {
       <CodeFormModal
         open={codeModal.open}
         editing={codeModal.editing}
+        codeType={selectedCodeType}
+        codeTypes={codeTypes}
         onOk={handleCodeOk}
         onCancel={() => setCodeModal({ open: false, editing: null })}
         loading={createCode.isPending || updateCode.isPending}

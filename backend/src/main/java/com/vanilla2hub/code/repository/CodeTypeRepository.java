@@ -9,5 +9,6 @@ import java.util.Optional;
 public interface CodeTypeRepository extends JpaRepository<CodeType, Long> {
     List<CodeType> findAllByDeletedFalseOrderBySortOrderAsc();
     Optional<CodeType> findByIdAndDeletedFalse(Long id);
+    Optional<CodeType> findByCodeAndDeletedFalse(String code);
     boolean existsByCodeAndDeletedFalse(String code);
 }

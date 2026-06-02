@@ -1,8 +1,13 @@
 package com.vanilla2hub.code.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vanilla2hub.code.dto.AttributeField;
 import com.vanilla2hub.code.dto.CodeTypeRequest;
 import com.vanilla2hub.code.dto.CodeTypeResponse;
 import com.vanilla2hub.code.entity.CodeType;
+import com.vanilla2hub.code.repository.CodeRepository;
 import com.vanilla2hub.code.repository.CodeTypeRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.csv.CSVFormat;
@@ -17,8 +22,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +31,12 @@ import java.util.Map;
 public class CodeTypeService {
 
     private final CodeTypeRepository codeTypeRepository;
+    private final CodeRepository codeRepository;
+    private final CodeCacheService codeCacheService;
+    private final ObjectMapper objectMapper;
+
+    private static final TypeReference<List<AttributeField>> SCHEMA_TYPE = new TypeReference<>() {};
+    private static final TypeReference<Map<String, Object>> EXTRA_TYPE   = new TypeReference<>() {};
 
     public List<CodeTypeResponse> getAll() {
         return codeTypeRepository.findAllByDeletedFalseOrderBySortOrderAsc()
@@ -45,6 +56,7 @@ public class CodeTypeService {
                 .code(request.code())
                 .name(request.name())
                 .description(request.description())
+                .attributeSchema(serializeSchema(request.attributeSchema()))
                 .sortOrder(request.sortOrder())
                 .build();
         return CodeTypeResponse.from(codeTypeRepository.save(codeType));
@@ -53,19 +65,56 @@ public class CodeTypeService {
     @Transactional
     public CodeTypeResponse update(Long id, CodeTypeRequest request) {
         CodeType codeType = findOrThrow(id);
-        codeType.update(request.name(), request.description(), request.sortOrder());
+        if (codeType.isSystemDefault()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "시스템 기본 코드타입은 수정할 수 없습니다.");
+        }
+
+        List<AttributeField> oldSchema = parseSchema(codeType.getAttributeSchema());
+        List<AttributeField> newSchema = request.attributeSchema() != null ? request.attributeSchema() : List.of();
+
+        Set<String> oldKeys = oldSchema.stream().map(AttributeField::key).collect(Collectors.toSet());
+        Set<String> newKeys = newSchema.stream().map(AttributeField::key).collect(Collectors.toSet());
+
+        // required=false → true 전환 시 기존 코드 값 보유 여부 확인
+        Map<String, Boolean> oldRequired = oldSchema.stream()
+                .collect(Collectors.toMap(AttributeField::key, AttributeField::required));
+        for (AttributeField field : newSchema) {
+            if (field.required() && oldKeys.contains(field.key()) && !oldRequired.getOrDefault(field.key(), false)) {
+                validateRequiredTransition(id, field);
+            }
+        }
+
+        // 삭제된 key → 모든 Code.extra에서 제거
+        Set<String> deletedKeys = new HashSet<>(oldKeys);
+        deletedKeys.removeAll(newKeys);
+        for (String deletedKey : deletedKeys) {
+            codeRepository.removeExtraKeyByCodeTypeId(id, deletedKey);
+        }
+
+        codeType.update(request.name(), request.description(), serializeSchema(newSchema), request.sortOrder());
+        codeCacheService.refresh(codeType.getId(), codeType.getCode());
         return CodeTypeResponse.from(codeType);
     }
 
     @Transactional
     public void delete(Long id) {
-        findOrThrow(id).delete();
+        CodeType codeType = findOrThrow(id);
+        if (codeType.isSystemDefault()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "시스템 기본 코드타입은 삭제할 수 없습니다.");
+        }
+        List<String> usages = findCodeReferences(codeType.getCode(), null);
+        if (!usages.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "다음 코드에서 참조 중이어서 삭제할 수 없습니다: " + String.join(", ", usages));
+        }
+        codeType.delete();
+        codeCacheService.evict(codeType.getCode());
     }
 
     public byte[] exportCsv() throws IOException {
         List<CodeType> list = codeTypeRepository.findAllByDeletedFalseOrderBySortOrderAsc();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        out.write(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF}); // UTF-8 BOM (Excel 호환)
+        out.write(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
         try (CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(out, StandardCharsets.UTF_8),
                 CSVFormat.DEFAULT.builder().setHeader("code", "name", "description", "sortOrder").build())) {
             for (CodeType ct : list) {
@@ -99,6 +148,77 @@ public class CodeTypeService {
     CodeType findOrThrow(Long id) {
         return codeTypeRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "코드타입을 찾을 수 없습니다: " + id));
+    }
+
+    /**
+     * targetCodeValue=null 이면 해당 CodeType을 참조하는 코드 전체 검색.
+     * targetCodeValue 지정 시 그 값을 참조하는 코드만 검색.
+     */
+    List<String> findCodeReferences(String targetCodeTypeCode, String targetCodeValue) {
+        List<String> usages = new ArrayList<>();
+        for (CodeType ct : codeTypeRepository.findAllByDeletedFalseOrderBySortOrderAsc()) {
+            collectReferencesFromCodeType(ct, targetCodeTypeCode, targetCodeValue, usages);
+        }
+        return usages;
+    }
+
+    private void collectReferencesFromCodeType(CodeType ct, String targetCodeTypeCode, String targetCodeValue, List<String> usages) {
+        List<AttributeField> refFields = parseSchema(ct.getAttributeSchema()).stream()
+                .filter(f -> AttributeField.TYPE_CODE_REF.equals(f.type()) && targetCodeTypeCode.equals(f.refCodeTypeCode()))
+                .toList();
+        if (refFields.isEmpty()) return;
+        for (var code : codeRepository.findAllByCodeTypeIdAndDeletedFalse(ct.getId())) {
+            Map<String, Object> extra = parseExtra(code.getExtra());
+            for (AttributeField field : refFields) {
+                if (matchesReference(extra.get(field.key()), targetCodeValue)) {
+                    usages.add(ct.getCode() + " > " + code.getCode());
+                }
+            }
+        }
+    }
+
+    private boolean matchesReference(Object val, String targetCodeValue) {
+        if (val == null || val.toString().isBlank()) return false;
+        return targetCodeValue == null || targetCodeValue.equals(val.toString());
+    }
+
+    private void validateRequiredTransition(Long codeTypeId, AttributeField field) {
+        List<com.vanilla2hub.code.entity.Code> codes = codeRepository.findAllByCodeTypeIdAndDeletedFalse(codeTypeId);
+        for (var code : codes) {
+            Map<String, Object> extra = parseExtra(code.getExtra());
+            Object val = extra.get(field.key());
+            if (val == null || val.toString().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "일부 코드에 '" + field.label() + "' 값이 없어 필수로 변경할 수 없습니다.");
+            }
+        }
+    }
+
+    List<AttributeField> parseSchema(String json) {
+        if (json == null || json.isBlank()) return List.of();
+        try {
+            return objectMapper.readValue(json, SCHEMA_TYPE);
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    String serializeSchema(List<AttributeField> schema) {
+        if (schema == null || schema.isEmpty()) return null;
+        try {
+            return objectMapper.writeValueAsString(schema);
+        } catch (JsonProcessingException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "attribute_schema 직렬화 실패");
+        }
+    }
+
+    Map<String, Object> parseExtra(String json) {
+        if (json == null || json.isBlank()) return new HashMap<>();
+        try {
+            return objectMapper.readValue(json, EXTRA_TYPE);
+        } catch (Exception e) {
+            return new HashMap<>();
+        }
     }
 
     private static String nullIfBlank(String v) { return (v == null || v.isBlank()) ? null : v; }
