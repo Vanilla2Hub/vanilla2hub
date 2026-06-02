@@ -1,5 +1,8 @@
 package com.vanilla2hub.common.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,8 +19,14 @@ import java.time.Duration;
 public class RedisConfig {
 
     @Bean
-    public RedisCacheManager cacheManager(RedisConnectionFactory factory) {
-        var serializer = new GenericJackson2JsonRedisSerializer();
+    public RedisCacheManager cacheManager(RedisConnectionFactory factory, ObjectMapper objectMapper) {
+        ObjectMapper redisMapper = objectMapper.copy()
+                .activateDefaultTyping(
+                        LaissezFaireSubTypeValidator.instance,
+                        ObjectMapper.DefaultTyping.NON_FINAL,
+                        JsonTypeInfo.As.PROPERTY
+                );
+        var serializer = new GenericJackson2JsonRedisSerializer(redisMapper);
         var serializationPair = RedisSerializationContext.SerializationPair.fromSerializer(serializer);
 
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
