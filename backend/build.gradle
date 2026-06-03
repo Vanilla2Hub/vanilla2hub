@@ -40,6 +40,8 @@ dependencies {
 
     // Observability
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'com.github.loki4j:loki-logback-appender:1.5.2'
 
     // API Docs
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8'
