@@ -9,7 +9,7 @@
 - Vault: 런타임 시크릿 소스 (KV v2, AppRole 인증).
 - MariaDB: 애플리케이션 데이터 저장소
 - Redis: 외부 API 응답 공유 캐시 (멀티 파드 환경에서 파드 간 캐시 일관성 보장)
-- Prometheus/Grafana: 메트릭 수집 및 시각화
+- Prometheus/Loki/Grafana: 메트릭 수집·로그 집계·시각화 (NAS 192.168.0.39 운영)
 - SonarQube: 정적 분석/품질 게이트
 - CircleCI: 빌드/테스트/분석/배포 파이프라인
 

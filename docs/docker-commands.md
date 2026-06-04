@@ -121,3 +121,38 @@ docker compose -f docker-compose.sonar.yml down
 | MariaDB | localhost:3306 |
 | Redis | localhost:6379 |
 | SonarQube | http://localhost:9000 |
+
+---
+
+## 모니터링 (NAS — 192.168.0.39)
+
+NAS에서 Prometheus + Loki + Grafana를 운영한다. 백엔드가 메트릭/로그를 NAS로 전송한다.
+
+| 서비스 | URL |
+|--------|-----|
+| Prometheus | http://192.168.0.39:9090 |
+| Grafana | http://192.168.0.39:3000 |
+| Loki | http://192.168.0.39:3100 |
+
+### Windows 포트 포워딩 (최초 1회 설정, 관리자 PowerShell)
+
+WSL2 IP는 재부팅마다 변경되므로 매번 재설정이 필요하다.
+
+```powershell
+# 기존 규칙 제거 후 재등록
+netsh interface portproxy delete v4tov4 listenport=8080 listenaddress=0.0.0.0
+$wsl2ip = (wsl hostname -I).Trim().Split(' ')[0]
+netsh interface portproxy add v4tov4 listenport=8080 listenaddress=0.0.0.0 connectport=8080 connectaddress=$wsl2ip
+```
+
+### 메트릭 엔드포인트
+
+```bash
+# 백엔드 실행 후 Prometheus 메트릭 확인
+curl http://localhost:8080/actuator/prometheus | head -20
+```
+
+### Grafana 대시보드
+
+- Spring Boot 3.x 메트릭: ID `19004` import
+- Loki 로그 쿼리: `{app="vanilla2hub"}` / `{app="vanilla2hub"} |= "ERROR"`
