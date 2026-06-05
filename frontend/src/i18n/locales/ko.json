@@ -47,6 +47,16 @@
     "select": "선택",
     "code_ref": "코드 참조"
   },
+  "app": {
+    "title": "논리적 앱 원장",
+    "registerTitle": "앱 등록",
+    "editTitle": "앱 수정",
+    "owner": "담당자",
+    "status": "상태",
+    "appType": "앱 유형",
+    "parentApp": "상위 앱",
+    "extra": "추가 속성 (JSON)"
+  },
   "code": {
     "title": "코드 목록",
     "registerTitle": "코드 등록",

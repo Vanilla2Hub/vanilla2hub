@@ -47,6 +47,16 @@
     "select": "Select",
     "code_ref": "Code Ref"
   },
+  "app": {
+    "title": "Logical App Ledger",
+    "registerTitle": "Add App",
+    "editTitle": "Edit App",
+    "owner": "Owner",
+    "status": "Status",
+    "appType": "App Type",
+    "parentApp": "Parent App",
+    "extra": "Extra (JSON)"
+  },
   "code": {
     "title": "Codes",
     "registerTitle": "Add Code",
