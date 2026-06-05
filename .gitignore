@@ -34,6 +34,9 @@ frontend/.vite/
 application-local.yml
 local.properties
 
+# Scripts
+*.sh
+
 # OS
 .DS_Store
 Thumbs.db
