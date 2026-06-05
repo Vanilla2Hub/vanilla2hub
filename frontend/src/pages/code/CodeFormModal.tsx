@@ -88,20 +88,33 @@ export default function CodeFormModal({ open, editing, codeType, codeTypes, onOk
 
   useEffect(() => {
     if (open) {
-      const parsedExtra = editing?.extra
-        ? (() => { try { return JSON.parse(editing.extra!) } catch { return {} } })()
-        : {}
-      form.setFieldsValue(editing
-        ? { ...editing, description: editing.description ?? undefined, extra: parsedExtra }
-        : { code: '', name: '', description: '', sortOrder: 0, extra: {} }
-      )
+      if (schema.length === 0) {
+        form.setFieldsValue(editing
+          ? { ...editing, description: editing.description ?? undefined, extra: (editing.extra ?? '') as unknown as Record<string, unknown> }
+          : { code: '', name: '', description: '', sortOrder: 0, extra: '' as unknown as Record<string, unknown> }
+        )
+      } else {
+        const parsedExtra = editing?.extra
+          ? (() => { try { return JSON.parse(editing.extra!) } catch { return {} } })()
+          : {}
+        form.setFieldsValue(editing
+          ? { ...editing, description: editing.description ?? undefined, extra: parsedExtra }
+          : { code: '', name: '', description: '', sortOrder: 0, extra: {} }
+        )
+      }
     }
-  }, [open, editing, form])
+  }, [open, editing, form, schema])
 
   const handleOk = () => {
     form.validateFields().then(values => {
       const { extra, ...rest } = values
-      const extraJson = (extra && Object.keys(extra).length > 0) ? JSON.stringify(extra) : undefined
+      let extraJson: string | undefined
+      if (schema.length === 0) {
+        const s = (extra as unknown as string)?.trim()
+        extraJson = s || undefined
+      } else {
+        extraJson = (extra && Object.keys(extra).length > 0) ? JSON.stringify(extra) : undefined
+      }
       onOk({ ...rest, extra: extraJson })
     })
   }
