@@ -65,5 +65,18 @@
     "empty": "No codes found.",
     "selectType": "Select a code type on the left.",
     "registerSuccess": "Code added successfully."
+  },
+  "connector": {
+    "title": "Connectors",
+    "registerTitle": "Add Connector",
+    "editTitle": "Edit Connector",
+    "baseUrl": "Base URL",
+    "authType": "Auth Type",
+    "vaultSecretPath": "Vault Secret Path",
+    "timeoutMs": "Timeout",
+    "retryCount": "Retry Count",
+    "enabled": "Enabled",
+    "on": "On",
+    "off": "Off"
   }
 }

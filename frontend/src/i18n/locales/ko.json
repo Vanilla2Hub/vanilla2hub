@@ -65,5 +65,18 @@
     "empty": "코드가 없습니다.",
     "selectType": "좌측에서 코드타입을 선택하세요.",
     "registerSuccess": "코드가 등록됐습니다."
+  },
+  "connector": {
+    "title": "커넥터 설정",
+    "registerTitle": "커넥터 등록",
+    "editTitle": "커넥터 수정",
+    "baseUrl": "Base URL",
+    "authType": "인증 유형",
+    "vaultSecretPath": "Vault 시크릿 경로",
+    "timeoutMs": "타임아웃",
+    "retryCount": "재시도 횟수",
+    "enabled": "활성화",
+    "on": "활성",
+    "off": "비활성"
   }
 }
