@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { Avatar, Dropdown, Layout, Menu, Typography } from 'antd'
-import { AppstoreOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons'
+import { AppstoreOutlined, ApartmentOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthProvider'
 
@@ -20,6 +20,11 @@ export default function MainLayout() {
   }
 
   const menuItems = [
+    {
+      key: '/apps',
+      icon: <ApartmentOutlined />,
+      label: <Link to="/apps">{t('app.title')}</Link>,
+    },
     {
       key: '/codes',
       icon: <AppstoreOutlined />,
