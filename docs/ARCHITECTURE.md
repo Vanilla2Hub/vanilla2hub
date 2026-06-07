@@ -103,7 +103,6 @@ cors.allowed-origins:
 # application-prod.yml
 cors.allowed-origins:
   - https://app.hjeon.i234.me        # Service A (prod)
-  - https://service-b.company.com    # Service B 전환 시 추가
 ```
 
 ### API 인가 흐름
