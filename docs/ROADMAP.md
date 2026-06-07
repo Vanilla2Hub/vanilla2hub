@@ -3,9 +3,10 @@
 ## Phase 1: Foundation (Current Focus)
 1. ✅ 모노레포 기본 구성 — Gradle multi-module, Spring Boot 3.5, React+Vite, Flyway V1·V2, BaseEntity
 2. 인프라 설정 (K8s, MariaDB, Vault, Keycloak)
-3. 로그인 및 인증/인가 구조 (Keycloak OIDC + JwtCookieFilter + Multi-issuer)
-4. 시스템 공통 코드 관리 (하드코딩 방지를 위한 코드/그룹 UI CRUD)
-5. 논리적 애플리케이션 원장 CRUD
+   → CI/CD 파이프라인 구성은 [CICD_ROADMAP.md](./CICD_ROADMAP.md) 참고
+3. ✅ 로그인 및 인증/인가 구조 (Keycloak OIDC + JwtCookieFilter + Multi-issuer)
+4. ✅ 시스템 공통 코드 관리 (하드코딩 방지를 위한 코드/그룹 UI CRUD)
+5. ✅ 논리적 애플리케이션 원장 CRUD
 
 ## Phase 2: Ingestion Engine
 5. 배치 잡 디자인

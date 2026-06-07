@@ -78,8 +78,8 @@
 ## D-012: 프론트엔드 독립적 백엔드 API 설계
 
 - Status: Accepted
-- Decision: 백엔드는 순수 REST API만 제공하며 특정 프론트엔드에 종속되지 않는다. Service A와 Service B 중 어느 쪽이 붙더라도 백엔드 변경 없이 동작해야 한다.
-- Reason: PoC 단계에서 Service A로 개발하되, 필요하다면 Service B로 전환하거나 병행 운영할 수 있어야 함. Service A는 dev 환경에서 PoC 용도로 유지.
+- Decision: 백엔드는 순수 REST API만 제공하며 특정 프론트엔드에 종속되지 않는다. 어떤 클라이언트가 붙더라도 백엔드 변경 없이 동작해야 한다.
+- Reason: PoC 단계에서 Service A로 개발하되, 향후 클라이언트가 추가되거나 교체되더라도 백엔드 구조 변경 없이 대응할 수 있어야 함.
 - Detail:
   - Service A (브라우저): Keycloak OIDC 인증 → httpOnly Cookie 방식
   - 백엔드는 두 방식을 모두 수용, 클라이언트 전환 시 백엔드 무변경
@@ -252,7 +252,7 @@
 - Status: Accepted
 - Supersedes: D-013
 - Decision: JWT 검증은 Keycloak 단일 issuer로 단순화한다. 브라우저는 httpOnly Cookie, Postman 등 API 클라이언트는 `Authorization: Bearer` 헤더로 직접 호출한다.
-- Reason: Service B 연동 계획 제거 및 Vault 서명키 검증 복잡도 불필요. Postman 개발 편의성 확보가 더 중요.
+- Reason: Vault 서명키 검증 복잡도 불필요. Postman 개발 편의성 확보가 더 중요.
 - Detail:
   - `JwtCookieFilter`: `Authorization` 헤더가 이미 있으면 통과(Postman). 없으면 `access_token` 쿠키 → `Bearer` 헤더 변환(브라우저)
   - Spring OAuth2 Resource Server: `spring.security.oauth2.resourceserver.jwt.issuer-uri` 단일 설정으로 Keycloak JWKS 검증
