@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { Avatar, Dropdown, Layout, Menu, Typography } from 'antd'
-import { AppstoreOutlined, ApartmentOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons'
+import { AppstoreOutlined, ApartmentOutlined, ApiOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthProvider'
 
@@ -29,6 +29,11 @@ export default function MainLayout() {
       key: '/codes',
       icon: <AppstoreOutlined />,
       label: <Link to="/codes">{t('codeType.title')}</Link>,
+    },
+    {
+      key: '/connectors',
+      icon: <ApiOutlined />,
+      label: <Link to="/connectors">{t('connector.title')}</Link>,
     },
   ]
 
